@@ -4,9 +4,17 @@ import Navbar from '../components/Navbar';
 import StatsOverview from '../components/StatsOverview';
 import TransactionForm from '../components/TransactionForm';
 import TransactionList from '../components/TransactionList';
+import BudgetBar from '../components/BudgetBar';
+import ExpenseChart from '../components/ExpenseChart';
 
 function DashboardPage({ user, token, onLogout, apiBaseUrl }) {
   const [transactions, setTransactions] = useState([]);
+  // Modal open/close state
+  const [isChartOpen, setIsChartOpen] = useState(false);
+  
+  const [budget, setBudget] = useState(
+    Number(localStorage.getItem(`budget_${user?.id}`)) || 10000
+  );
 
   useEffect(() => {
     loadTransactions();
@@ -21,6 +29,11 @@ function DashboardPage({ user, token, onLogout, apiBaseUrl }) {
     } catch (err) {
       console.error(err);
     }
+  };
+
+  const handleUpdateBudget = (newBudgetAmount) => {
+    setBudget(newBudgetAmount);
+    localStorage.setItem(`budget_${user?.id}`, newBudgetAmount);
   };
 
   const handleAddTransaction = async (formData) => {
@@ -62,10 +75,36 @@ function DashboardPage({ user, token, onLogout, apiBaseUrl }) {
       <main className="main-content">
         <StatsOverview balance={balanceTotal} income={incomeTotal} expense={expenseTotal} />
 
+        {/* Budget Row + Analytics Button */}
+        <div className="budget-wrapper-row">
+          <div>
+            <BudgetBar
+              totalExpense={expenseTotal}
+              budget={budget}
+              onUpdateBudget={handleUpdateBudget}
+            />
+          </div>
+          <button 
+            type="button" 
+            onClick={() => setIsChartOpen(true)} 
+            className="btn-analytics"
+          >
+            📊 View Analytics
+          </button>
+        </div>
+
+        {/* Main Grid */}
         <div className="dashboard-grid">
           <TransactionForm onAddTransaction={handleAddTransaction} />
           <TransactionList transactions={transactions} onDeleteTransaction={handleDeleteTransaction} />
         </div>
+
+        {/* Modal Component */}
+        <ExpenseChart
+          transactions={transactions}
+          isOpen={isChartOpen}
+          onClose={() => setIsChartOpen(false)}
+        />
       </main>
     </div>
   );

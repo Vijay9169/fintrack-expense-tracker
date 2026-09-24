@@ -480,3 +480,189 @@ body {
   cursor: pointer;
   width: 100%;
 }
+
+/* --- REPLACE STARTS HERE --- */
+
+/* Budget Bar Component */
+.budget-card {
+  width: 100%;
+  margin-bottom: 0 !important; /* Extra bottom space hataya */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.budget-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.budget-header h4 {
+  font-size: 15px;
+  color: #1e293b;
+  margin-bottom: 4px;
+}
+
+.budget-header p {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.progress-track {
+  width: 100%;
+  height: 10px;
+  background-color: #e2e8f0;
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  transition: width 0.4s ease, background-color 0.4s ease;
+  border-radius: 9999px;
+}
+
+.btn-edit-budget {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.btn-edit-budget:hover {
+  background: #e2e8f0;
+}
+
+.budget-edit-form {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.budget-edit-form input {
+  width: 120px;
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+.btn-small {
+  padding: 6px 10px;
+  font-size: 12px;
+  background: #4f46e5;
+  color: white;
+  border-radius: 6px;
+}
+
+.btn-small-cancel {
+  background: transparent;
+  color: #64748b;
+  font-size: 13px;
+  padding: 4px 6px;
+}
+
+.budget-alert-badge {
+  margin-top: 12px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.alert-danger {
+  background-color: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.alert-warning {
+  background-color: #fffbeb;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+/* Filter Toolbar */
+.filter-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 10px 14px;
+  font-size: 13px;
+}
+
+.filter-selects {
+  display: flex;
+  gap: 10px;
+}
+
+.filter-selects select {
+  font-size: 13px;
+  padding: 8px 12px;
+}
+
+.btn-export-csv {
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-export-csv:hover {
+  background: #10b981;
+  color: #ffffff;
+}
+
+/* Equal Height & Perfect Alignment for Budget + Analytics Row */
+.budget-wrapper-row {
+  display: flex;
+  align-items: stretch; /* Dono boxes ko ek barabar height dega */
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.budget-wrapper-row > div:first-child {
+  flex: 1;
+  display: flex;
+}
+
+.btn-analytics {
+  background: var(--surface);
+  color: var(--primary);
+  border: 1px solid #f1f5f9;
+  border-radius: var(--radius);
+  padding: 0 28px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  white-space: nowrap;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: auto; /* Stretched card height adopt karega */
+}
+
+.btn-analytics:hover {
+  background: #eef2ff;
+  border-color: #c7d2fe;
+  color: #4338ca;
+  transform: translateY(-2px);
+}
+
+/* --- REPLACE ENDS HERE --- */
