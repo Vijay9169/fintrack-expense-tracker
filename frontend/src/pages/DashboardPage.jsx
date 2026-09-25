@@ -40,13 +40,18 @@ function DashboardPage({
     Number(localStorage.getItem(`budget_${user?.id}`)) || 10000
   );
 
+  // Clean base URL bana lijiye:
+  const cleanBase = (apiBaseUrl || 'https://fintrack-expense-tracker-2cis.onrender.com/api')
+  .replace(/\/api\/?$/, '')
+  .replace(/\/$/, '');
+
   useEffect(() => {
     loadTransactions();
   }, [token]);
 
   const loadTransactions = async () => {
     try {
-      const res = await axios.get(`${apiBaseUrl}/transactions`, {
+      const res = await axios.get(`${cleanBase}/api/transactions`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setTransactions(res.data);
@@ -63,7 +68,7 @@ function DashboardPage({
   // ✅ Add Transaction with Success Toast
   const handleAddTransaction = async (formData) => {
     try {
-      const res = await axios.post(`${apiBaseUrl}/transactions`, formData, {
+      const res = await axios.post(`${cleanBase}/api/transactions`, formData, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setTransactions([res.data, ...transactions]);
@@ -96,7 +101,7 @@ function DashboardPage({
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          await axios.delete(`${apiBaseUrl}/transactions/${id}`, {
+          await axios.delete(`${cleanBase}/api/transactions/${id}`, {
             headers: { Authorization: `Bearer ${token}` },
           });
           setTransactions((prev) => prev.filter((item) => item._id !== id));

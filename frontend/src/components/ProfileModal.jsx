@@ -9,6 +9,10 @@ function ProfileModal({ isOpen, onClose, user, onUpdateUser, totalTransactions, 
   const [statusMsg, setStatusMsg] = useState({ text: '', type: '' });
   const [loading, setLoading] = useState(false);
 
+  const cleanBase = (apiBaseUrl || 'https://fintrack-expense-tracker-2cis.onrender.com/api')
+  .replace(/\/api\/?$/, '')
+  .replace(/\/$/, '');
+
   const handleUpdate = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -16,7 +20,7 @@ function ProfileModal({ isOpen, onClose, user, onUpdateUser, totalTransactions, 
 
     try {
       const res = await axios.put(
-        `${apiBaseUrl}/auth/update-profile`,
+        `${cleanBase}/api/auth/update-profile`,
         { name, newPassword: newPassword || undefined },
         { headers: { Authorization: `Bearer ${token}` } }
       );
