@@ -18,6 +18,11 @@ function App() {
     setUser(newUser);
   };
 
+  const handleUpdateUser = (updatedUser) => {
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+    setUser(updatedUser);
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -34,6 +39,7 @@ function App() {
       user={user}
       token={token}
       onLogout={handleLogout}
+      onUpdateUser={handleUpdateUser}
       apiBaseUrl={API_BASE_URL}
     />
   );

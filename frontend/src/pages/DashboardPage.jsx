@@ -6,12 +6,14 @@ import TransactionForm from '../components/TransactionForm';
 import TransactionList from '../components/TransactionList';
 import BudgetBar from '../components/BudgetBar';
 import ExpenseChart from '../components/ExpenseChart';
+import ProfileModal from '../components/ProfileModal';
 
-function DashboardPage({ user, token, onLogout, apiBaseUrl }) {
+function DashboardPage({ user, token, onLogout, onUpdateUser, apiBaseUrl }) {
   const [transactions, setTransactions] = useState([]);
-  // Modal open/close state
   const [isChartOpen, setIsChartOpen] = useState(false);
-  
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [timeRange, setTimeRange] = useState('all'); // 'all', 'this_month', 'last_month'
+
   const [budget, setBudget] = useState(
     Number(localStorage.getItem(`budget_${user?.id}`)) || 10000
   );
@@ -58,11 +60,38 @@ function DashboardPage({ user, token, onLogout, apiBaseUrl }) {
     }
   };
 
-  const incomeTotal = transactions
+  // Monthly Range Filtering
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth();
+
+  const rangedTransactions = transactions.filter((t) => {
+    if (timeRange === 'all') return true;
+    const txDate = new Date(t.date);
+
+    if (timeRange === 'this_month') {
+      return (
+        txDate.getFullYear() === currentYear &&
+        txDate.getMonth() === currentMonth
+      );
+    }
+
+    if (timeRange === 'last_month') {
+      const lastMonthDate = new Date(currentYear, currentMonth - 1, 1);
+      return (
+        txDate.getFullYear() === lastMonthDate.getFullYear() &&
+        txDate.getMonth() === lastMonthDate.getMonth()
+      );
+    }
+
+    return true;
+  });
+
+  const incomeTotal = rangedTransactions
     .filter((t) => t.type === 'income')
     .reduce((acc, curr) => acc + curr.amount, 0);
 
-  const expenseTotal = transactions
+  const expenseTotal = rangedTransactions
     .filter((t) => t.type === 'expense')
     .reduce((acc, curr) => acc + curr.amount, 0);
 
@@ -70,12 +99,15 @@ function DashboardPage({ user, token, onLogout, apiBaseUrl }) {
 
   return (
     <div className="app-layout">
-      <Navbar user={user} onLogout={onLogout} />
+      <Navbar
+        user={user}
+        onLogout={onLogout}
+        onOpenProfile={() => setIsProfileOpen(true)}
+      />
 
       <main className="main-content">
         <StatsOverview balance={balanceTotal} income={incomeTotal} expense={expenseTotal} />
 
-        {/* Budget Row + Analytics Button */}
         <div className="budget-wrapper-row">
           <div>
             <BudgetBar
@@ -84,26 +116,40 @@ function DashboardPage({ user, token, onLogout, apiBaseUrl }) {
               onUpdateBudget={handleUpdateBudget}
             />
           </div>
-          <button 
-            type="button" 
-            onClick={() => setIsChartOpen(true)} 
+          <button
+            type="button"
+            onClick={() => setIsChartOpen(true)}
             className="btn-analytics"
           >
             📊 View Analytics
           </button>
         </div>
 
-        {/* Main Grid */}
         <div className="dashboard-grid">
           <TransactionForm onAddTransaction={handleAddTransaction} />
-          <TransactionList transactions={transactions} onDeleteTransaction={handleDeleteTransaction} />
+          <TransactionList
+            transactions={rangedTransactions}
+            onDeleteTransaction={handleDeleteTransaction}
+            user={user}
+            timeRange={timeRange}
+            setTimeRange={setTimeRange}
+          />
         </div>
 
-        {/* Modal Component */}
         <ExpenseChart
-          transactions={transactions}
+          transactions={rangedTransactions}
           isOpen={isChartOpen}
           onClose={() => setIsChartOpen(false)}
+        />
+
+        <ProfileModal
+          isOpen={isProfileOpen}
+          onClose={() => setIsProfileOpen(false)}
+          user={user}
+          onUpdateUser={onUpdateUser}
+          totalTransactions={transactions.length}
+          apiBaseUrl={apiBaseUrl}
+          token={token}
         />
       </main>
     </div>

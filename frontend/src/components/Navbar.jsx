@@ -1,6 +1,6 @@
 import React from 'react';
 
-function Navbar({ user, onLogout }) {
+function Navbar({ user, onLogout, onOpenProfile }) {
   return (
     <nav className="navbar">
       <div className="nav-container">
@@ -10,7 +10,12 @@ function Navbar({ user, onLogout }) {
         </div>
 
         <div className="user-nav">
-          <div className="user-profile">
+          <div 
+            className="user-profile" 
+            onClick={onOpenProfile}
+            style={{ cursor: 'pointer', padding: '4px 8px', borderRadius: '8px', transition: 'background 0.2s' }}
+            title="Click to view & edit profile"
+          >
             <div className="avatar">
               {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
             </div>

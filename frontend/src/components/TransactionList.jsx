@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const CATEGORY_ICONS = {
   Food: '🍔',
@@ -11,11 +13,18 @@ const CATEGORY_ICONS = {
   Other: '🏷️',
 };
 
-function TransactionList({ transactions, onDeleteTransaction }) {
+function TransactionList({
+  transactions,
+  onDeleteTransaction,
+  user,
+  timeRange,
+  setTimeRange,
+}) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedType, setSelectedType] = useState('All');
 
+  // Filter Logic: Search + Category + Type
   const filteredTransactions = transactions.filter((item) => {
     const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory;
@@ -23,9 +32,9 @@ function TransactionList({ transactions, onDeleteTransaction }) {
     return matchesSearch && matchesCategory && matchesType;
   });
 
-  // CSV Export Logic
+  // CSV Export
   const handleExportCSV = () => {
-    if (transactions.length === 0) {
+    if (filteredTransactions.length === 0) {
       alert('No transactions to export.');
       return;
     }
@@ -46,22 +55,95 @@ function TransactionList({ transactions, onDeleteTransaction }) {
     document.body.removeChild(link);
   };
 
+  // PDF Export
+  const handleExportPDF = () => {
+    if (filteredTransactions.length === 0) {
+      alert('No transactions to export.');
+      return;
+    }
+
+    const doc = new jsPDF();
+    doc.setFontSize(20);
+    doc.setTextColor(79, 70, 229);
+    doc.text('FinTrack Account Statement', 14, 20);
+
+    doc.setFontSize(10);
+    doc.setTextColor(100, 116, 139);
+    doc.text(`Generated on: ${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}`, 14, 28);
+    if (user?.name) {
+      doc.text(`Account Holder: ${user.name} (${user.email || ''})`, 14, 34);
+    }
+    doc.text(`Filter Period: ${timeRange.toUpperCase()}`, 14, 40);
+
+    const tableColumn = ['#', 'Title', 'Category', 'Type', 'Amount (INR)', 'Date'];
+    const tableRows = filteredTransactions.map((t, idx) => [
+      idx + 1,
+      t.title,
+      t.category,
+      t.type.toUpperCase(),
+      (t.type === 'income' ? '+ ' : '- ') + Number(t.amount).toLocaleString('en-IN'),
+      new Date(t.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
+    ]);
+
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRows,
+      startY: 46,
+      theme: 'grid',
+      headStyles: { fillColor: [79, 70, 229], textColor: [255, 255, 255], fontStyle: 'bold' },
+      styles: { fontSize: 9, cellPadding: 4 },
+      alternateRowStyles: { fillColor: [248, 250, 252] },
+    });
+
+    doc.save(`FinTrack_Statement_${new Date().toISOString().split('T')[0]}.pdf`);
+  };
+
   return (
     <div className="glass-card">
-      <div className="card-title">
+      <div className="card-title" style={{ flexWrap: 'wrap', gap: '10px' }}>
         <div>
           <span>Transaction History</span>
-          <span style={{ fontSize: '13px', fontWeight: 600, color: '#64748b', marginLeft: '10px' }}>
+          <span style={{ fontSize: '13px', fontWeight: 600, color: '#64748b', marginLeft: '8px' }}>
             {filteredTransactions.length} of {transactions.length} Records
           </span>
         </div>
 
-        {/* 1-Click CSV Export Button */}
-        <button onClick={handleExportCSV} className="btn-export-csv">
-          📥 Export CSV
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button onClick={handleExportCSV} className="btn-export-csv" title="Export to CSV">
+            📥 CSV
+          </button>
+          <button onClick={handleExportPDF} className="btn-export-pdf" title="Download PDF">
+            📄 PDF Statement
+          </button>
+        </div>
+      </div>
+
+      {/* Quick Month Switcher Toolbar */}
+      <div className="range-filter-row">
+        <button
+          type="button"
+          className={`range-pill ${timeRange === 'all' ? 'active' : ''}`}
+          onClick={() => setTimeRange('all')}
+        >
+          All Time
+        </button>
+        <button
+          type="button"
+          className={`range-pill ${timeRange === 'this_month' ? 'active' : ''}`}
+          onClick={() => setTimeRange('this_month')}
+        >
+          This Month
+        </button>
+        <button
+          type="button"
+          className={`range-pill ${timeRange === 'last_month' ? 'active' : ''}`}
+          onClick={() => setTimeRange('last_month')}
+        >
+          Last Month
         </button>
       </div>
 
+      {/* Filter Toolbar */}
       <div className="filter-toolbar">
         <input
           type="text"
@@ -95,7 +177,7 @@ function TransactionList({ transactions, onDeleteTransaction }) {
       {filteredTransactions.length === 0 ? (
         <div className="empty-state">
           <div style={{ fontSize: '40px', marginBottom: '8px' }}>🔍</div>
-          <p>No transactions match your search or filter criteria.</p>
+          <p>No transactions found for the selected period or filters.</p>
         </div>
       ) : (
         <div className="tx-list">
