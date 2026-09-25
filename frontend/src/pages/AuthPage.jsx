@@ -1,26 +1,42 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 
+// Agar prop na mile ya env variable miss ho jaye, toh direct Render URL fallback rahega
+const DEFAULT_API_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  'https://fintrack-expense-tracker.onrender.com/api';
+
 function AuthPage({ onAuthSuccess, apiBaseUrl }) {
   const [isLoginView, setIsLoginView] = useState(true);
   const [authName, setAuthName] = useState('');
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  // Clean baseURL ensure karein (trailing slash remove karke)
+  const resolvedBaseUrl = (apiBaseUrl || DEFAULT_API_URL).replace(/\/$/, '');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMessage('');
+
+    if (loading) return;
+
+    // Backend route /api/auth/login ya /api/auth/register banega
     const endpoint = isLoginView ? '/auth/login' : '/auth/register';
     const payload = isLoginView
       ? { email: authEmail, password: authPassword }
       : { name: authName, email: authEmail, password: authPassword };
 
+    setLoading(true);
     try {
-      const res = await axios.post(`${apiBaseUrl}${endpoint}`, payload);
+      const res = await axios.post(`${resolvedBaseUrl}${endpoint}`, payload);
       onAuthSuccess(res.data.token, res.data.user);
     } catch (err) {
       setErrorMessage(err.response?.data?.message || 'Authentication error');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -54,6 +70,7 @@ function AuthPage({ onAuthSuccess, apiBaseUrl }) {
               value={authName}
               onChange={(e) => setAuthName(e.target.value)}
               required
+              disabled={loading}
             />
           )}
           <input
@@ -62,6 +79,7 @@ function AuthPage({ onAuthSuccess, apiBaseUrl }) {
             value={authEmail}
             onChange={(e) => setAuthEmail(e.target.value)}
             required
+            disabled={loading}
           />
           <input
             type="password"
@@ -69,14 +87,26 @@ function AuthPage({ onAuthSuccess, apiBaseUrl }) {
             value={authPassword}
             onChange={(e) => setAuthPassword(e.target.value)}
             required
+            disabled={loading}
           />
-          <button type="submit" className="btn-primary" style={{ width: '100%', marginTop: '6px' }}>
-            {isLoginView ? 'Sign In' : 'Get Started'}
+          <button 
+            type="submit" 
+            className="btn-primary" 
+            disabled={loading}
+            style={{ 
+              width: '100%', 
+              marginTop: '6px',
+              opacity: loading ? 0.75 : 1,
+              cursor: loading ? 'not-allowed' : 'pointer'
+            }}
+          >
+            {loading ? 'Please wait...' : (isLoginView ? 'Sign In' : 'Get Started')}
           </button>
         </form>
 
         <button
           className="auth-switch"
+          disabled={loading}
           onClick={() => {
             setIsLoginView(!isLoginView);
             setErrorMessage('');
