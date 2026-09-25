@@ -3,7 +3,7 @@ import AuthPage from './pages/AuthPage';
 import DashboardPage from './pages/DashboardPage';
 import './App.css';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://fintrack-expense-tracker.onrender.com/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://fintrack-expense-tracker-2cis.onrender.com/api';
 
 function App() {
   const [token, setToken] = useState(localStorage.getItem('token') || '');

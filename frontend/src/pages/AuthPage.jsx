@@ -4,7 +4,7 @@ import axios from 'axios';
 // Agar prop na mile ya env variable miss ho jaye, toh direct Render URL fallback rahega
 const DEFAULT_API_URL =
   import.meta.env.VITE_API_BASE_URL ||
-  'https://fintrack-expense-tracker.onrender.com/api';
+  'https://fintrack-expense-tracker-2cis.onrender.com/ap';
 
 function AuthPage({ onAuthSuccess, apiBaseUrl }) {
   const [isLoginView, setIsLoginView] = useState(true);
@@ -15,7 +15,7 @@ function AuthPage({ onAuthSuccess, apiBaseUrl }) {
   const [loading, setLoading] = useState(false);
 
   // Clean baseURL ensure karein (trailing slash remove karke)
-  const resolvedBaseUrl = (apiBaseUrl || DEFAULT_API_URL).replace(/\/$/, '');
+  const cleanBase = (apiBaseUrl || DEFAULT_API_URL).replace(/\/api\/?$/, '').replace(/\/$/, '');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -24,14 +24,14 @@ function AuthPage({ onAuthSuccess, apiBaseUrl }) {
     if (loading) return;
 
     // Backend route /api/auth/login ya /api/auth/register banega
-    const endpoint = isLoginView ? '/auth/login' : '/auth/register';
+    const endpoint = isLoginView ? '/api/auth/login' : '/api/auth/register';
     const payload = isLoginView
       ? { email: authEmail, password: authPassword }
       : { name: authName, email: authEmail, password: authPassword };
 
     setLoading(true);
     try {
-      const res = await axios.post(`${resolvedBaseUrl}${endpoint}`, payload);
+      const res = await axios.post(`${cleanBase}${endpoint}`, payload);
       onAuthSuccess(res.data.token, res.data.user);
     } catch (err) {
       setErrorMessage(err.response?.data?.message || 'Authentication error');
