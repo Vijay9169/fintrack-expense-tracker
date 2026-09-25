@@ -9,33 +9,33 @@ router.get('/', auth, async (req, res) => {
   try {
     const transactions = await Transaction.find({ userId: req.user.userId }).sort({ date: -1 });
     res.json(transactions);
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error fetching transactions' });
   }
 });
 
 // @route   POST /api/transactions
-// @desc    Add a new transaction (Income or Expense)
+// @desc    Add a new transaction with Notes
 router.post('/', auth, async (req, res) => {
   try {
-    const { title, amount, type, category, date } = req.body;
+    const { title, amount, type, category, notes, date } = req.body;
 
-    if (!title || !amount || !type) {
-      return res.status(400).json({ message: 'Please provide title, amount, and type' });
-    }
-
-    const transaction = await Transaction.create({
+    const newTransaction = new Transaction({
       userId: req.user.userId,
       title,
-      amount: Number(amount),
+      amount,
       type,
-      category: category || 'Other',
-      date: date || Date.now(),
+      category,
+      notes: notes || '',
+      date: date || new Date(),
     });
 
-    res.status(201).json(transaction);
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    const savedTransaction = await newTransaction.save();
+    res.status(201).json(savedTransaction);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Error adding transaction' });
   }
 });
 
@@ -43,18 +43,20 @@ router.post('/', auth, async (req, res) => {
 // @desc    Delete a transaction
 router.delete('/:id', auth, async (req, res) => {
   try {
-    const transaction = await Transaction.findOneAndDelete({
-      _id: req.params.id,
-      userId: req.user.userId, // Ensures a user can only delete their own transaction
-    });
-
+    const transaction = await Transaction.findById(req.params.id);
     if (!transaction) {
-      return res.status(404).json({ message: 'Transaction not found or unauthorized' });
+      return res.status(404).json({ message: 'Transaction not found' });
     }
 
-    res.json({ message: 'Transaction removed successfully' });
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    if (transaction.userId.toString() !== req.user.userId) {
+      return res.status(401).json({ message: 'User not authorized' });
+    }
+
+    await Transaction.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Transaction removed' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error deleting transaction' });
   }
 });
 

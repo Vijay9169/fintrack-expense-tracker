@@ -23,45 +23,35 @@ function TransactionList({
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedType, setSelectedType] = useState('All');
+  const [selectedTx, setSelectedTx] = useState(null); // Details modal state
 
-  // Filter Logic: Search + Category + Type
   const filteredTransactions = transactions.filter((item) => {
-    const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch =
+      item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (item.notes && item.notes.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory;
     const matchesType = selectedType === 'All' || item.type === selectedType;
     return matchesSearch && matchesCategory && matchesType;
   });
 
-  // CSV Export
   const handleExportCSV = () => {
-    if (filteredTransactions.length === 0) {
-      alert('No transactions to export.');
-      return;
-    }
-
-    const headers = ['Title,Type,Category,Amount,Date\n'];
+    if (filteredTransactions.length === 0) return alert('No transactions to export.');
+    const headers = ['Title,Type,Category,Amount,Date,Notes\n'];
     const rows = filteredTransactions.map((t) => {
       const formattedDate = new Date(t.date).toISOString().split('T')[0];
-      return `"${t.title}",${t.type},${t.category},${t.amount},${formattedDate}`;
+      return `"${t.title}",${t.type},${t.category},${t.amount},${formattedDate},"${t.notes || ''}"`;
     });
-
-    const csvContent = 'data:text/csv;charset=utf-8,' + headers.concat(rows).join('\n');
-    const encodedUri = encodeURI(csvContent);
+    const blob = new Blob([headers.concat(rows).join('\n')], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
+    link.href = URL.createObjectURL(blob);
     link.setAttribute('download', `FinTrack_Statement_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
-  // PDF Export
   const handleExportPDF = () => {
-    if (filteredTransactions.length === 0) {
-      alert('No transactions to export.');
-      return;
-    }
-
+    if (filteredTransactions.length === 0) return alert('No transactions to export.');
     const doc = new jsPDF();
     doc.setFontSize(20);
     doc.setTextColor(79, 70, 229);
@@ -75,7 +65,7 @@ function TransactionList({
     }
     doc.text(`Filter Period: ${timeRange.toUpperCase()}`, 14, 40);
 
-    const tableColumn = ['#', 'Title', 'Category', 'Type', 'Amount (INR)', 'Date'];
+    const tableColumn = ['#', 'Title', 'Category', 'Type', 'Amount (INR)', 'Date', 'Notes'];
     const tableRows = filteredTransactions.map((t, idx) => [
       idx + 1,
       t.title,
@@ -83,6 +73,7 @@ function TransactionList({
       t.type.toUpperCase(),
       (t.type === 'income' ? '+ ' : '- ') + Number(t.amount).toLocaleString('en-IN'),
       new Date(t.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
+      t.notes || '-',
     ]);
 
     autoTable(doc, {
@@ -91,7 +82,7 @@ function TransactionList({
       startY: 46,
       theme: 'grid',
       headStyles: { fillColor: [79, 70, 229], textColor: [255, 255, 255], fontStyle: 'bold' },
-      styles: { fontSize: 9, cellPadding: 4 },
+      styles: { fontSize: 8, cellPadding: 3 },
       alternateRowStyles: { fillColor: [248, 250, 252] },
     });
 
@@ -109,16 +100,15 @@ function TransactionList({
         </div>
 
         <div style={{ display: 'flex', gap: '8px' }}>
-          <button onClick={handleExportCSV} className="btn-export-csv" title="Export to CSV">
+          <button onClick={handleExportCSV} className="btn-export-csv" title="Export CSV">
             📥 CSV
           </button>
-          <button onClick={handleExportPDF} className="btn-export-pdf" title="Download PDF">
+          <button onClick={handleExportPDF} className="btn-export-pdf" title="Export PDF">
             📄 PDF Statement
           </button>
         </div>
       </div>
 
-      {/* Quick Month Switcher Toolbar */}
       <div className="range-filter-row">
         <button
           type="button"
@@ -143,11 +133,10 @@ function TransactionList({
         </button>
       </div>
 
-      {/* Filter Toolbar */}
       <div className="filter-toolbar">
         <input
           type="text"
-          placeholder="🔍 Search transactions..."
+          placeholder="🔍 Search title or notes..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="search-input"
@@ -177,18 +166,29 @@ function TransactionList({
       {filteredTransactions.length === 0 ? (
         <div className="empty-state">
           <div style={{ fontSize: '40px', marginBottom: '8px' }}>🔍</div>
-          <p>No transactions found for the selected period or filters.</p>
+          <p>No transactions match your search or filter criteria.</p>
         </div>
       ) : (
         <div className="tx-list">
           {filteredTransactions.map((item) => (
-            <div key={item._id} className="tx-card">
+            <div
+              key={item._id}
+              className="tx-card"
+              onClick={() => setSelectedTx(item)}
+              style={{ cursor: 'pointer' }}
+              title="Click to view details & note"
+            >
               <div className="tx-info">
                 <div className="tx-cat-badge">
                   {CATEGORY_ICONS[item.category] || '🏷️'}
                 </div>
                 <div className="tx-details">
-                  <strong>{item.title}</strong>
+                  <strong>
+                    {item.title}
+                    {item.notes && (
+                      <span className="note-indicator-badge">📝 Note</span>
+                    )}
+                  </strong>
                   <span>
                     {item.category} • {new Date(item.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
                   </span>
@@ -199,15 +199,119 @@ function TransactionList({
                   {item.type === 'income' ? '+' : '-'} ₹{item.amount.toLocaleString('en-IN')}
                 </span>
                 <button
-                  onClick={() => onDeleteTransaction(item._id)}
-                  className="btn-delete"
-                  title="Delete"
+                  type="button"
+                  className="btn-delete-icon"
+                  title="Delete Transaction"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDeleteTransaction(item._id, item.title);
+                  }}
                 >
-                  ✕
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                  </svg>
                 </button>
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Details & Notes Modal */}
+      {selectedTx && (
+        <div
+          className="modal-overlay"
+          onClick={() => setSelectedTx(null)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 99999,
+          }}
+        >
+          <div
+            className="modal-box"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: '#ffffff',
+              borderRadius: '16px',
+              padding: '24px',
+              width: '90%',
+              maxWidth: '420px',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ margin: 0, fontSize: '18px', color: '#1e293b' }}>Transaction Details</h3>
+              <button
+                type="button"
+                onClick={() => setSelectedTx(null)}
+                style={{
+                  background: '#f1f5f9',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: '32px',
+                  height: '32px',
+                  cursor: 'pointer',
+                  fontWeight: 'bold',
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: '#64748b' }}>Title:</span>
+                <strong>{selectedTx.title}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: '#64748b' }}>Type:</span>
+                <strong style={{ color: selectedTx.type === 'income' ? '#10b981' : '#ef4444', textTransform: 'capitalize' }}>
+                  {selectedTx.type}
+                </strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: '#64748b' }}>Amount:</span>
+                <strong>₹{selectedTx.amount.toLocaleString('en-IN')}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: '#64748b' }}>Category:</span>
+                <strong>{selectedTx.category}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: '#64748b' }}>Date:</span>
+                <strong>{new Date(selectedTx.date).toLocaleString('en-IN')}</strong>
+              </div>
+
+              <div style={{ marginTop: '8px', borderTop: '1px solid #e2e8f0', paddingTop: '10px' }}>
+                <span style={{ color: '#64748b', display: 'block', marginBottom: '4px', fontSize: '12px' }}>
+                  📝 Note / Remark:
+                </span>
+                <p style={{ background: '#f8fafc', padding: '10px', borderRadius: '8px', color: '#1e293b', fontStyle: selectedTx.notes ? 'normal' : 'italic' }}>
+                  {selectedTx.notes || 'No note attached to this entry.'}
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

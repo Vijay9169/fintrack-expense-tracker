@@ -1,8 +1,6 @@
-import React, { useState } from 'react';
-
+import React, { useState, useEffect } from 'react';
 import AuthPage from './pages/AuthPage';
 import DashboardPage from './pages/DashboardPage';
-
 import './App.css';
 
 const API_BASE_URL = 'http://localhost:5000/api';
@@ -10,6 +8,16 @@ const API_BASE_URL = 'http://localhost:5000/api';
 function App() {
   const [token, setToken] = useState(localStorage.getItem('token') || '');
   const [user, setUser] = useState(JSON.parse(localStorage.getItem('user')) || null);
+  const [theme, setTheme] = useState(localStorage.getItem('fintrack_theme') || 'light');
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('fintrack_theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((prevTheme) => (prevTheme === 'light' ? 'dark' : 'light'));
+  };
 
   const handleAuthSuccess = (newToken, newUser) => {
     localStorage.setItem('token', newToken);
@@ -41,6 +49,8 @@ function App() {
       onLogout={handleLogout}
       onUpdateUser={handleUpdateUser}
       apiBaseUrl={API_BASE_URL}
+      theme={theme}
+      toggleTheme={toggleTheme}
     />
   );
 }

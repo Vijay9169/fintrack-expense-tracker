@@ -5,6 +5,7 @@ function TransactionForm({ onAddTransaction }) {
   const [amount, setAmount] = useState('');
   const [type, setType] = useState('expense');
   const [category, setCategory] = useState('Food');
+  const [notes, setNotes] = useState('');
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -15,10 +16,13 @@ function TransactionForm({ onAddTransaction }) {
       amount: Number(amount),
       type,
       category,
+      notes,
+      date: new Date(),
     });
 
     setTitle('');
     setAmount('');
+    setNotes('');
   };
 
   return (
@@ -52,7 +56,7 @@ function TransactionForm({ onAddTransaction }) {
           <label>Title</label>
           <input
             type="text"
-            placeholder="e.g. Swiggy order, Monthly salary"
+            placeholder="e.g. Swiggy order, Client advance"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             required
@@ -83,16 +87,26 @@ function TransactionForm({ onAddTransaction }) {
               </>
             ) : (
               <>
-                <option value="Salary">💰 Monthly Salary</option>
-                <option value="Freelance">💻 Freelancing</option>
-                <option value="Investment">📈 Investments</option>
-                <option value="Other">🏷️ Other</option>
+                <option value="Salary">💰 Salary</option>
+                <option value="Freelance">💻 Freelance</option>
+                <option value="Investment">📈 Investment Return</option>
+                <option value="Other">🏷️ Other Income</option>
               </>
             )}
           </select>
         </div>
 
-        <button type="submit" className="btn-primary" style={{ marginTop: '8px' }}>
+        <div className="form-group">
+          <label>Note / Remark (Optional)</label>
+          <input
+            type="text"
+            placeholder="e.g. Paid via UPI"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+          />
+        </div>
+
+        <button type="submit" className="btn-primary">
           Save Transaction
         </button>
       </form>

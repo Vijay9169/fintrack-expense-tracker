@@ -1,6 +1,6 @@
 import React from 'react';
 
-function Navbar({ user, onLogout, onOpenProfile }) {
+function Navbar({ user, onLogout, onOpenProfile, theme, toggleTheme }) {
   return (
     <nav className="navbar">
       <div className="nav-container">
@@ -10,10 +10,19 @@ function Navbar({ user, onLogout, onOpenProfile }) {
         </div>
 
         <div className="user-nav">
-          <div 
-            className="user-profile" 
+          {/* Dark / Light Mode Button */}
+          <button
+            type="button"
+            className="btn-theme-toggle"
+            onClick={toggleTheme}
+            title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          >
+            {theme === 'dark' ? '☀️' : '🌙'}
+          </button>
+
+          <div
+            className="user-profile"
             onClick={onOpenProfile}
-            style={{ cursor: 'pointer', padding: '4px 8px', borderRadius: '8px', transition: 'background 0.2s' }}
             title="Click to view & edit profile"
           >
             <div className="avatar">
@@ -24,6 +33,7 @@ function Navbar({ user, onLogout, onOpenProfile }) {
               <span style={{ fontSize: '12px', color: '#64748b' }}>{user?.email}</span>
             </div>
           </div>
+
           <button onClick={onLogout} className="btn-logout">
             Logout
           </button>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import Swal from 'sweetalert2';
 import Navbar from '../components/Navbar';
 import StatsOverview from '../components/StatsOverview';
 import TransactionForm from '../components/TransactionForm';
@@ -8,7 +9,28 @@ import BudgetBar from '../components/BudgetBar';
 import ExpenseChart from '../components/ExpenseChart';
 import ProfileModal from '../components/ProfileModal';
 
-function DashboardPage({ user, token, onLogout, onUpdateUser, apiBaseUrl }) {
+// Top-Right Toast Notification Configuration
+const Toast = Swal.mixin({
+  toast: true,
+  position: 'top-end',
+  showConfirmButton: false,
+  timer: 3000,
+  timerProgressBar: true,
+  didOpen: (toast) => {
+    toast.addEventListener('mouseenter', Swal.stopTimer);
+    toast.addEventListener('mouseleave', Swal.resumeTimer);
+  }
+});
+
+function DashboardPage({
+  user,
+  token,
+  onLogout,
+  onUpdateUser,
+  apiBaseUrl,
+  theme,
+  toggleTheme
+}) {
   const [transactions, setTransactions] = useState([]);
   const [isChartOpen, setIsChartOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -38,26 +60,68 @@ function DashboardPage({ user, token, onLogout, onUpdateUser, apiBaseUrl }) {
     localStorage.setItem(`budget_${user?.id}`, newBudgetAmount);
   };
 
+  // ✅ Add Transaction with Success Toast
   const handleAddTransaction = async (formData) => {
     try {
       const res = await axios.post(`${apiBaseUrl}/transactions`, formData, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setTransactions([res.data, ...transactions]);
+
+      Toast.fire({
+        icon: 'success',
+        title: 'Transaction created successfully!'
+      });
     } catch (err) {
       console.error(err);
+      Toast.fire({
+        icon: 'error',
+        title: 'Failed to create transaction'
+      });
     }
   };
 
-  const handleDeleteTransaction = async (id) => {
-    try {
-      await axios.delete(`${apiBaseUrl}/transactions/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setTransactions(transactions.filter((item) => item._id !== id));
-    } catch (err) {
-      console.error(err);
-    }
+  // ⚠️ Delete Confirmation Dialog + Cancelled + Success Toast
+  const handleDeleteTransaction = async (id, title) => {
+    Swal.fire({
+      title: 'Are you sure?',
+      text: `Are you sure you want to delete "${title || 'this transaction'}"? This action cannot be undone.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#e11d48',
+      cancelButtonColor: '#0284c7',
+      confirmButtonText: 'Yes, proceed!',
+      cancelButtonText: 'No, keep it',
+      reverseButtons: false,
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          await axios.delete(`${apiBaseUrl}/transactions/${id}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          setTransactions((prev) => prev.filter((item) => item._id !== id));
+
+          Toast.fire({
+            icon: 'success',
+            title: 'Transaction deleted successfully!'
+          });
+        } catch (err) {
+          console.error(err);
+          Toast.fire({
+            icon: 'error',
+            title: 'Failed to delete transaction'
+          });
+        }
+      } else if (result.dismiss === Swal.DismissReason.cancel) {
+        Swal.fire({
+          title: 'Cancelled',
+          text: 'Your records are safe :)',
+          icon: 'error',
+          confirmButtonColor: '#0284c7',
+          confirmButtonText: 'OK'
+        });
+      }
+    });
   };
 
   // Monthly Range Filtering
@@ -103,6 +167,8 @@ function DashboardPage({ user, token, onLogout, onUpdateUser, apiBaseUrl }) {
         user={user}
         onLogout={onLogout}
         onOpenProfile={() => setIsProfileOpen(true)}
+        theme={theme}
+        toggleTheme={toggleTheme}
       />
 
       <main className="main-content">
