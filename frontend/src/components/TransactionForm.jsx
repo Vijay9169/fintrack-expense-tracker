@@ -6,23 +6,35 @@ function TransactionForm({ onAddTransaction }) {
   const [type, setType] = useState('expense');
   const [category, setCategory] = useState('Food');
   const [notes, setNotes] = useState('');
+  const [loading, setLoading] = useState(false); // 👈 Loader state
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!title || !amount) return;
 
-    onAddTransaction({
-      title,
-      amount: Number(amount),
-      type,
-      category,
-      notes,
-      date: new Date(),
-    });
+    // Double-click prevent karne ke liye check
+    if (loading) return;
 
-    setTitle('');
-    setAmount('');
-    setNotes('');
+    setLoading(true); // Button lock aur spinner active
+    try {
+      await onAddTransaction({
+        title,
+        amount: Number(amount),
+        type,
+        category,
+        notes,
+        date: new Date(),
+      });
+
+      // Successful add hone ke baad hi form clear hoga
+      setTitle('');
+      setAmount('');
+      setNotes('');
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false); // Request complete hone par button unlock
+    }
   };
 
   return (
@@ -60,6 +72,7 @@ function TransactionForm({ onAddTransaction }) {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             required
+            disabled={loading}
           />
         </div>
 
@@ -71,12 +84,17 @@ function TransactionForm({ onAddTransaction }) {
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             required
+            disabled={loading}
           />
         </div>
 
         <div className="form-group">
           <label>Category</label>
-          <select value={category} onChange={(e) => setCategory(e.target.value)}>
+          <select 
+            value={category} 
+            onChange={(e) => setCategory(e.target.value)}
+            disabled={loading}
+          >
             {type === 'expense' ? (
               <>
                 <option value="Food">🍔 Food & Dining</option>
@@ -103,11 +121,31 @@ function TransactionForm({ onAddTransaction }) {
             placeholder="e.g. Paid via UPI"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
+            disabled={loading}
           />
         </div>
 
-        <button type="submit" className="btn-primary">
-          Save Transaction
+        <button 
+          type="submit" 
+          className="btn-primary" 
+          disabled={loading}
+          style={{
+            opacity: loading ? 0.75 : 1,
+            cursor: loading ? 'not-allowed' : 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px'
+          }}
+        >
+          {loading ? (
+            <>
+              <span className="spinner-border"></span>
+              Saving...
+            </>
+          ) : (
+            'Save Transaction'
+          )}
         </button>
       </form>
     </div>
